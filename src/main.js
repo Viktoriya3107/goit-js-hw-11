@@ -1,56 +1,30 @@
-import iziToast from "izitoast";
-import "izitoast/dist/css/iziToast.min.css";
 
-import { getImagesByQuery } from "./pixabay-api";
-import {
-  createGallery,
-  clearGallery,
-  showLoader,
-  hideLoader
-} from "./render-functions";
+import { getImagesByQuery } from "./js/pixabay-api.js";
+import { createGallery, clearGallery, showLoader, hideLoader } from "./js/render-functions.js";
 
 const form = document.querySelector(".form");
-const input = form.elements["search-text"];
+let currentPage = 1;
+let currentQuery = "";
 
-form.addEventListener("submit", onSearch);
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-function onSearch(event) {
-  event.preventDefault();
-
+  const input = form.querySelector("input[name='search-text']");
   const query = input.value.trim();
+  if (!query) return;
 
-  if (!query) {
-    iziToast.warning({
-      message: "Please enter a search term!",
-      position: "topRight",
-    });
-    return;
-  }
+  currentQuery = query;
+  currentPage = 1;
 
   clearGallery();
   showLoader();
 
-  getImagesByQuery(query)
-    .then(data => {
-      if (data.hits.length === 0) {
-        iziToast.error({
-          message:
-            "Sorry, there are no images matching your search query. Please try again!",
-          position: "topRight",
-        });
-        return;
-      }
-
-      createGallery(data.hits);
-    })
-    .catch(() => {
-      iziToast.error({
-        message: "Something went wrong. Try again later.",
-        position: "topRight",
-      });
-    })
-    .finally(() => {
-      hideLoader();
-      form.reset();
-    });
-}
+  try {
+    const images = await getImagesByQuery(query, currentPage);
+    createGallery(images);
+  } catch (error) {
+    console.error("Помилка запиту:", error);
+  } finally {
+    hideLoader();
+  }
+});
