@@ -1,4 +1,3 @@
-
 import { getImagesByQuery } from "./js/pixabay-api.js";
 import { createGallery, clearGallery, showLoader, hideLoader } from "./js/render-functions.js";
 
@@ -11,7 +10,14 @@ form.addEventListener("submit", async (e) => {
 
   const input = form.querySelector("input[name='search-text']");
   const query = input.value.trim();
-  if (!query) return;
+  if (!query) {
+    iziToast.warning({
+      title: 'Увага',
+      message: 'Будь ласка, введіть запит для пошуку.',
+      position: 'topRight',
+    });
+    return;
+  }
 
   currentQuery = query;
   currentPage = 1;
@@ -21,9 +27,25 @@ form.addEventListener("submit", async (e) => {
 
   try {
     const images = await getImagesByQuery(query, currentPage);
+
+    if (!images || images.length === 0) {
+      iziToast.error({
+        title: 'Помилка',
+        message: `За запитом "${query}" зображень не знайдено.`,
+        position: 'topRight',
+      });
+      return;
+    }
+
     createGallery(images);
+
   } catch (error) {
     console.error("Помилка запиту:", error);
+    iziToast.error({
+      title: 'Помилка',
+      message: 'Сталася помилка під час завантаження зображень. Спробуйте пізніше.',
+      position: 'topRight',
+    });
   } finally {
     hideLoader();
   }
